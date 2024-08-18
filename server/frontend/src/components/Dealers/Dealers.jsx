@@ -6,91 +6,121 @@ import review_icon from "../assets/reviewicon.png"
 
 const Dealers = () => {
   const [dealersList, setDealersList] = useState([]);
-  // let [state, setState] = useState("")
-  let [states, setStates] = useState([])
+  const [states, setStates] = useState([]);
 
-  // let root_url = window.location.origin
-  let dealer_url ="/djangoapp/get_dealers";
+  const dealer_url = "/djangoapp/get_dealers";  // Updated URL
   
-  let dealer_url_by_state = "/djangoapp/get_dealers/";
- 
   const filterDealers = async (state) => {
-    dealer_url_by_state = dealer_url_by_state+state;
-    const res = await fetch(dealer_url_by_state, {
-      method: "GET"
-    });
-    const retobj = await res.json();
-    if(retobj.status === 200) {
-      let state_dealers = Array.from(retobj.dealers)
-      setDealersList(state_dealers)
-    }
-  }
-
-  const get_dealers = async ()=>{
-    const res = await fetch(dealer_url, {
-      method: "GET"
-    });
-    const retobj = await res.json();
-    if(retobj.status === 200) {
-      let all_dealers = Array.from(retobj.dealers)
-      let states = [];
-      all_dealers.forEach((dealer)=>{
-        states.push(dealer.state)
+    const dealer_url_by_state = `/djangoapp/get_dealers/${state}`;  // Updated URL
+    try {
+      const res = await fetch(dealer_url_by_state, {
+        method: "GET"
       });
-
-      setStates(Array.from(new Set(states)))
-      setDealersList(all_dealers)
+      const retobj = await res.json();
+      console.log("Filter Dealers Response:", retobj); // Add detailed logging
+      if (retobj.status === 200 && retobj.dealers) {
+        setDealersList(retobj.dealers);
+      } else {
+        console.error("Failed to fetch dealers or no dealers found.");
+        setDealersList([]); // Reset the dealers list if no data is found
+      }
+    } catch (error) {
+      console.error("Error filtering dealers by state:", error);
+      setDealersList([]); // Handle error by resetting the dealers list
     }
   }
+
+  const get_dealers = async () => {
+    try {
+      const res = await fetch(dealer_url, {
+        method: "GET"
+      });
+      const retobj = await res.json();
+      console.log("Get Dealers Response:", retobj); // Add detailed logging
+
+      if (res.ok && retobj.status === 200) {
+        if (retobj.dealers) {
+          const all_dealers = retobj.dealers;
+          
+          const statesSet = new Set();
+          all_dealers.forEach(dealer => {
+            if (dealer.state) statesSet.add(dealer.state);
+          });
+
+          setStates(Array.from(statesSet));
+          setDealersList(all_dealers);
+        } else {
+          console.error("No dealers found in the response.");
+          setDealersList([]); // Reset the dealers list if no data is found
+        }
+      } else {
+        console.error("Failed to fetch dealers:", retobj.message);
+        setDealersList([]); // Reset the dealers list in case of failure
+      }
+    } catch (error) {
+      console.error("Error fetching dealers:", error);
+      setDealersList([]); // Handle error by resetting the dealers list
+    }
+  }
+
+  // Fetch dealers when the component mounts
   useEffect(() => {
     get_dealers();
-  },[]);  
+  }, []);
 
+  const isLoggedIn = sessionStorage.getItem("username") != null;
 
-let isLoggedIn = sessionStorage.getItem("username") != null ? true : false;
-return(
-  <div>
-      <Header/>
-
-     <table className='table'>
-      <tr>
-      <th>ID</th>
-      <th>Dealer Name</th>
-      <th>City</th>
-      <th>Address</th>
-      <th>Zip</th>
-      <th>
-      <select name="state" id="state" onChange={(e) => filterDealers(e.target.value)}>
-      <option value="" selected disabled hidden>State</option>
-      <option value="All">All States</option>
-      {states.map(state => (
-          <option value={state}>{state}</option>
-      ))}
-      </select>        
-
-      </th>
-      {isLoggedIn ? (
-          <th>Review Dealer</th>
-         ):<></>
-      }
-      </tr>
-     {dealersList.map(dealer => (
-        <tr>
-          <td>{dealer['id']}</td>
-          <td><a href={'/dealer/'+dealer['id']}>{dealer['full_name']}</a></td>
-          <td>{dealer['city']}</td>
-          <td>{dealer['address']}</td>
-          <td>{dealer['zip']}</td>
-          <td>{dealer['state']}</td>
-          {isLoggedIn ? (
-            <td><a href={`/postreview/${dealer['id']}`}><img src={review_icon} className="review_icon" alt="Post Review"/></a></td>
-           ):<></>
-          }
-        </tr>
-      ))}
-     </table>;
-  </div>
-)
+  return (
+    <div>
+      <Header />
+      <table className='table'>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Dealer Name</th>
+            <th>City</th>
+            <th>Address</th>
+            <th>Zip</th>
+            <th>
+              <select name="state" id="state" onChange={(e) => filterDealers(e.target.value)}>
+                <option value="" selected disabled hidden>State</option>
+                <option value="All">All States</option>
+                {states.map((state, index) => (
+                  <option key={index} value={state}>{state}</option>
+                ))}
+              </select>        
+            </th>
+            {isLoggedIn && <th>Review Dealer</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {dealersList.length > 0 ? (
+            dealersList.map(dealer => (
+              <tr key={dealer.id}>
+                <td>{dealer.id}</td>
+                <td><a href={`/dealer/${dealer.id}`}>{dealer.full_name}</a></td>
+                <td>{dealer.city}</td>
+                <td>{dealer.address}</td>
+                <td>{dealer.zip}</td>
+                <td>{dealer.state}</td>
+                {isLoggedIn && (
+                  <td>
+                    <a href={`/postreview/${dealer.id}`}>
+                      <img src={review_icon} className="review_icon" alt="Post Review"/>
+                    </a>
+                  </td>
+                )}
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="7">No dealers found.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
-export default Dealers
+export default Dealers;
