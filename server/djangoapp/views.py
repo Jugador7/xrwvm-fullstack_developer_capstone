@@ -94,7 +94,7 @@ def get_dealerships(request, state="All"):
 def get_dealer_reviews(request, dealer_id):
     if (dealer_id):
         endpoint = "/fetchReviews/dealer/" + str(dealer_id)
-        reviews = get_request(endpoint)      
+        reviews = get_request(endpoint)
         if reviews is None:
             return JsonResponse({"status": 500, "message": "Failed to fetch reviews"})
         for review_detail in reviews:
