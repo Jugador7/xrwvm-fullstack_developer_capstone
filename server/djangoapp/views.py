@@ -58,7 +58,7 @@ def registration(request):
         # Check if user already exists
         User.objects.get(username=username)
         username_exist = True
-    except Exception as err:
+    except Exception:
         # If not, simply log this is a new user
         logger.debug("{} is new user".format(username))
     # If it is a new user
@@ -78,10 +78,10 @@ def registration(request):
 # Update the `get_dealerships` view to render the index page with
 # a list of dealerships
 # def get_dealerships(request):
-#Update the `get_dealerships` render list of dealerships all by default, particular state if state is passed
+# Update the `get_dealerships` render list of dealerships all by default, particular state if state is passed
 @csrf_exempt
 def get_dealerships(request, state="All"):
-    if( state == "All" ):
+    if (state == "All"):
         endpoint = "/fetchDealers"
     else:
         endpoint = "/fetchDealers/" + state
@@ -92,20 +92,20 @@ def get_dealerships(request, state="All"):
 # Create a `get_dealer_reviews` view to render the reviews of a dealer
 # def get_dealer_reviews(request,dealer_id):
 def get_dealer_reviews(request, dealer_id):
-    if( dealer_id ):
+    if (dealer_id):
         endpoint = "/fetchReviews/dealer/" + str(dealer_id)
         reviews = get_request(endpoint)
-    
+        
         if reviews is None:
             return JsonResponse({"status": 500, "message": "Failed to fetch reviews"})
-            
+        
         for review_detail in reviews:
             response = analyze_review_sentiments(review_detail['review'])
             if response and 'sentiment' in response:
                 review_detail['sentiment'] = response['sentiment']
             else:
                 review_detail['sentiment'] = "Unknown"
-    
+                
         return JsonResponse({"status": 200, "reviews": reviews})
     else:
         return JsonResponse({"status": 400, "message": "Bad Request"})
@@ -113,7 +113,7 @@ def get_dealer_reviews(request, dealer_id):
 
 # Create a `get_dealer_details` view to render the dealer details
 def get_dealer_details(request, dealer_id):
-    if( dealer_id ):
+    if (dealer_id):
         endpoint = "/fetchDealer/" + str(dealer_id)
         dealership = get_request(endpoint)
         return JsonResponse({"status": 200, "dealer": dealership})
@@ -167,7 +167,7 @@ def add_review(request):
 def get_cars(request):
     count = CarMake.objects.filter().count()
     print(count)
-    if(count == 0):
+    if (count == 0):
         initiate()
     car_models = CarModel.objects.select_related('car_make')
     cars = []
