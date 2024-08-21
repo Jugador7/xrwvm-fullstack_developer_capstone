@@ -94,18 +94,15 @@ def get_dealerships(request, state="All"):
 def get_dealer_reviews(request, dealer_id):
     if (dealer_id):
         endpoint = "/fetchReviews/dealer/" + str(dealer_id)
-        reviews = get_request(endpoint)
-        
+        reviews = get_request(endpoint)        
         if reviews is None:
-            return JsonResponse({"status": 500, "message": "Failed to fetch reviews"})
-        
+            return JsonResponse({"status": 500, "message": "Failed to fetch reviews"})        
         for review_detail in reviews:
             response = analyze_review_sentiments(review_detail['review'])
             if response and 'sentiment' in response:
                 review_detail['sentiment'] = response['sentiment']
             else:
-                review_detail['sentiment'] = "Unknown"
-                
+                review_detail['sentiment'] = "Unknown"                
         return JsonResponse({"status": 200, "reviews": reviews})
     else:
         return JsonResponse({"status": 400, "message": "Bad Request"})
@@ -129,13 +126,11 @@ def add_review(request):
     if not request.user.is_anonymous:
         try:
             data = json.loads(request.body)
-            logger.debug(f"Received data for review: {data}")
-            
+            logger.debug(f"Received data for review: {data}")            
             # You can validate the data here if needed
             if not all(k in data for k in ("name", "dealership", "review", "purchase", "purchase_date",
                                            "car_make", "car_model", "car_year")):
                 return JsonResponse({"status": 400, "message": "Missing data fields"}, status=400)
-                
             # Forward the data to the post_review function
             # In your Django view
             response = post_review(data)
@@ -144,15 +139,12 @@ def add_review(request):
             else:
                 logger.error(f"Error in posting review: {response}")
                 return JsonResponse({"status": 500, "message": "Error in posting review"}, status=500)
-
-            
             # Assume response is a dictionary, so check the 'status' key or another key indicating success
             if response.get("status") == 200:  # Adjust this to match how your `post_review` function indicates success
                 return JsonResponse({"status": 200, "message": "Review added successfully"})
             else:
                 logger.error(f"Error in posting review: {response}")
                 return JsonResponse({"status": 500, "message": "Error in posting review"}, status=500)
-                
         except json.JSONDecodeError:
             logger.error("Invalid JSON received")
             return JsonResponse({"status": 400, "message": "Invalid JSON"}, status=400)
